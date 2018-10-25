@@ -137,26 +137,78 @@ app.deviceUUID.SENSOR_DATA =            '0000a003-0000-1000-8000-00805f9b34fb'; 
 app.deviceUUID.DEVICE_DATA =            '0000a004-0000-1000-8000-00805f9b34fb'; //streaming device notifications
 app.deviceUUID.NEURO_DATA =             '0000a005-0000-1000-8000-00805f9b34fb'; //streaming NN value notifications
 
+
+
+/**
+ * Low level initialization 
+ */
+document.addEventListener(
+    'deviceready',
+    function() { onDeviceReady(); }, false);
+
+//low level init
 /**
  * When low level initialization complete, this function is called.
  */
-document.addEventListener("deviceready", onDeviceReady, false);
 function onDeviceReady() {
     //Cordova vibration plugin
   //  console.log(navigator.vibrate);
     console.log("onDeviceReady()");
 
+    //W3C Device Motion API
+ //   window.addEventListener("devicemotion", processEvent, true);
+
+    initialiseAccelerometer();
     //try connecting on app startup
-    app.onConnectButton();
+  //  app.onConnectButton();
 }
+//function processEvent(event) {   /* process the event object */ }
+
+/**
+ * Low App initialization 
+ */
+app.initialize = function()
+{
+
+
+    // Called when HTML page has been loaded.
+    $(document).ready(function() {
+        // Adjust canvas size when browser resizes
+        $(window).resize(app.respondCanvas);
+
+        // Adjust the canvas size when the document has loaded.
+        app.respondCanvas();
+
+        //smoothie chart for streaming data
+        initializeChart();
+
+        //ENABLE EVERYTHING BECAUSE WE HAVE TEST DATA FROM PHONE
+        //enable neural network UI
+        enableButton('getTrueButton');
+        enableButton('clearTrueButton');
+        enableButton('getFalseButton');
+        enableButton('clearFalseButton');
+        enableButton('numTrueData');
+        enableButton('numFalseData');
+    });
+};
+
+
+ //Initialize phone accelerometer
+//if (window.DeviceOrientationEvent) {
+//  window.addEventListener('deviceorientation', deviceOrientationHandler, false)
+//}
+
+
+
 
 //smoothie chart data vis
 //var chart = new SmoothieChart({minValue: 0, maxValue: 20});
 var chart = new SmoothieChart({
 	//timestampFormatter: SmoothieChart.timeFormatter, 
 	millisPerPixel: 30,
-//	minValue: 0, 
-//	maxValue: 360,
+	minValue: 0, 
+	maxValue: 1,
 	grid: { strokeStyle:'rgb(155, 155, 155)', fillStyle:'rgb(0, 0, 0)', lineWidth: 1, millisPerLine: 1000, verticalSections: 6, },
   //	labels: { disabled:false, showIntermediateLabels: true, fontSize:12, fillStyle:'#ffffff' }
     labels: { disabled:true, showIntermediateLabels: false, fontSize:12, fillStyle:'#ffffff' }
@@ -174,10 +226,8 @@ var lineNN2 = new TimeSeries();
 
 function initializeChart() 
 {
-
     console.log("init chart");
     chart.streamTo(document.getElementById("streaming-data-chart"), 200 /*delay*/ ); //delay by one second because data aquisition is slow
-
     chart.addTimeSeries(lineRoll,      {strokeStyle: 'rgb(134, 136, 138)', 	lineWidth: 3 });
     chart.addTimeSeries(linePitch,     {strokeStyle: 'rgb(202, 204, 206)',  lineWidth: 3 });
     chart.addTimeSeries(lineTherm1,    {strokeStyle: 'rgb(255, 207, 0)',   	lineWidth: 3 });
@@ -188,31 +238,6 @@ function initializeChart()
     chart.addTimeSeries(lineNN,        {strokeStyle: 'rgb(57, 255, 20)',   	lineWidth: 4 });
     chart.addTimeSeries(lineNN2,       {strokeStyle: 'rgb(51, 255, 255)',   lineWidth: 4 });
 }
-
-
-
-
-app.initialize = function()
-{
-	document.addEventListener(
-		'deviceready',
-		function() { evothings.scriptsLoaded(app.onDeviceReady) },
-	   false);
-
-	// Called when HTML page has been loaded.
-    $(document).ready(function() {
-        // Adjust canvas size when browser resizes
-        $(window).resize(app.respondCanvas);
-
-        // Adjust the canvas size when the document has loaded.
-        app.respondCanvas();
-
-        //smoothie chart for streaming data
-        initializeChart();
-    });
-};
-
-
 
 
 /**
@@ -329,11 +354,17 @@ app.connectToDevice = function(device) {
         enableButton('clearFalseButton');
         enableButton('numTrueData');
         enableButton('numFalseData');
+
+        //remove phone accelerometer event listener
+     //   window.removeEventListener("deviceorientation", processEvent);
     },
     function(device)
     {
         console.log('Disconnected from device: ' + app.device.name);
         app.connected = false;
+
+        //START EXAMPLE BASED ON PHONE ACCELEROMETER
+        app.startSensorDataStream(app.device);
 
         //connection progress bar display
         $(".connect-button").show();
@@ -346,6 +377,9 @@ app.connectToDevice = function(device) {
     {
       console.log('Connect error: ' + errorCode);
       app.connected = false;
+
+        //START EXAMPLE BASED ON PHONE ACCELEROMETER
+        app.startSensorDataStream(app.device);
 
         //connection progress bar display
         $(".connect-button").show();
@@ -548,6 +582,7 @@ app.startSensorDataStream = function(device) {
         //    values[17] =  (values[17] / 255.0); //NN5 score from device
       //      values[18] =  (values[18] / 255.0); //NN5 score from device
 
+            //scores sent FROM Tingle TO app
             var deviceNN5score = values[17] / 255;
             var deviceNN7score = values[18] / 255;
 
@@ -574,13 +609,13 @@ app.startSensorDataStream = function(device) {
 
             /*************************** START ACTIVATE NEURAL NETWORK ***********************************/
             /*************************** START ACTIVATE NEURAL NETWORK ***********************************/
-            if(app.neuroHaveFlag){
+            if(app.neuroHaveFlag && app.connected == true){
                 app.neuroScore = app.neuralNet.activate([
                     (values[2] / 300),
-                    (values[3] / 101),
-                    (values[4] / 101),
-                    (values[5] / 101),
-                    (values[6] / 101)
+                    ( (values[3] - 69) / (101 - 69) ),
+                    ( (values[4] - 69) / (101 - 69) ),
+                    ( (values[5] - 69) / (101 - 69) ),
+                    ( (values[6] - 69) / (101 - 69) )
                 ]);
 
                 //from 0-1 to 0-100%
@@ -596,10 +631,10 @@ app.startSensorDataStream = function(device) {
                     (values[0] / 360),
                     (values[1] / 360),
                     (values[2] / 300),
-                    (values[3] / 101),
-                    (values[4] / 101),
-                    (values[5] / 101),
-                    (values[6] / 101)
+                    ( (values[3] - 69) / (101 - 69) ),
+                    ( (values[4] - 69) / (101 - 69) ),
+                    ( (values[5] - 69) / (101 - 69) ),
+                    ( (values[6] - 69) / (101 - 69) )
                 ]);
 
                 //from 0-1 to 0-100%
@@ -619,7 +654,29 @@ app.startSensorDataStream = function(device) {
 
                 app.showInfo('Detection: ' + app.neuroScore.toFixed(2) + "%  " + app.neuroScore2.toFixed(2) + "%");
             } 
-            else if(deviceNN5score < 1.01 && deviceNN5score >=0 && deviceNN7score < 1.01 && deviceNN7score >=0){
+
+            //EXAMPLE NEURAL NETWORK FROM PHONE ACCELEROMETER DATA
+            else if(app.neuroHaveFlag && app.connected == false){
+                app.neuroScore = app.neuralNet.activate([
+                    (values[0] / 360),
+                    (values[1] / 360)
+                ]);
+
+                //from 0-1 to 0-100%
+                app.neuroScore = app.neuroScore * 100;
+
+                //round to three sig digits
+                app.neuroScore = (Math.round(app.neuroScore * 1000)) / 1000;
+
+                if (app.neuroScore > 0.90){ app.alertDetect(); }
+
+             //   lineNN.append(now,     ( (app.neuroScore / 100) / 7) + 0.65);
+                lineNN.append(now,     (app.neuroScore / 100) );
+                app.showInfo('Detection: ' + app.neuroScore.toFixed(2) + "%");
+            }
+
+            //scores sent FROM Tingle TO app
+            else if(app.connected == true && deviceNN5score < 1.01 && deviceNN5score >=0 && deviceNN7score < 1.01 && deviceNN7score >=0){
                 lineNN.append(now,     deviceNN5score );
                 lineNN2.append(now,     deviceNN7score );
             }
@@ -631,7 +688,7 @@ app.startSensorDataStream = function(device) {
 
             /*************************** START GET TRUE/ON TARGET SAMPLES ******************************/
             /*************************** START GET TRUE/ON TARGET SAMPLES ******************************/
-            if (app.getTrueFlag) {
+            if (app.getTrueFlag && app.connected == true) {
 
                 //Let device know we are gathering true data
                 app.varState = 2;
@@ -662,18 +719,18 @@ app.startSensorDataStream = function(device) {
 
             /*************************** START GET FALSE/OFF TARGET SAMPLES ******************************/
             /*************************** START GET FALSE/OFF TARGET SAMPLES ******************************/
-            else if (app.getFalseFlag) {
+            else if (app.getFalseFlag && app.connected == true) {
                 //      if(app.getDelay == 0){ //skip to slow down
                 //Let device know we are gathering true data
                 app.varState = 3;
 
                 app.trainingDataFalse.push({
-                    input: [ (values[2] / 300), (values[3] / 101), (values[4] / 101), (values[5] / 101), (values[6] / 101) ],
+                    input: [ (values[2] / 300), ( (values[3] - 69) / (101 - 69)), ( (values[4] - 69) / (101 - 69)), ( (values[5] - 69) / (101 - 69)), ( (values[6] - 69) / (101 - 69)) ],
                     output: [0]
                 });
 
                 app.trainingDataFalse2.push({   // WITH ANGULAR POSITION
-                    input: [ (values[0]/360), (values[1]/360), (values[2] / 300),  (values[3] / 101), (values[4] / 101), (values[5] / 101), (values[6] / 101)],
+                    input: [ (values[0]/360), (values[1]/360), ( (values[3] - 69) / (101 - 69)), ( (values[4] - 69) / (101 - 69)), ( (values[5] - 69) / (101 - 69)), ( (values[6] - 69) / (101 - 69)) ],
                     output: [0]
                 });
 
@@ -685,8 +742,7 @@ app.startSensorDataStream = function(device) {
             /*************************** END GET FALSE/OFF TARGET SAMPLES ******************************/
 
 
-
-            /*************************** ?????????????? ******************************/
+            /*********************************************************/
       /*      else if (app.neuroData.transmitCount > 5) {
           //  document.getElementById('score').innerHTML = "Neural Net Score: 1: " + app.neuroScore + "% 2: " + app.neuroScore2 + " %";
 
@@ -698,7 +754,7 @@ app.startSensorDataStream = function(device) {
 
             /********************************* START TRAIN NEURAL NET ***********************************/
             /********************************* START TRAIN NEURAL NET ***********************************/
-            if (app.trainFlag) {
+            if (app.trainFlag && app.connected == true) {
 
                 app.showInfo('Status: Training...');
                 console.log("**Training...");
@@ -809,8 +865,6 @@ app.startSensorDataStream = function(device) {
             }
             /********************************* END TRAIN NEURAL NET ***********************************/
             /********************************* END TRAIN NEURAL NET ***********************************/
-
-
 
 
             /*************************** START SEND NEURAL NETWORK TO DEVICE *****************************/
@@ -1016,6 +1070,153 @@ app.startSensorDataStream = function(device) {
 };
 
 
+/****************************************************
+*******EXAMPLE BASED ON PHONE ACCELEROMETER *********
+****************************************************/
+
+//app.startExampleDataStream = function(device) {
+function accelerometerHandler(accelerationX, accelerationY, accelerationZ){
+ //   app.showInfo('Status: Starting data stream...');
+    app.showInfo('Status: Example data stream active');
+
+    if( $("#dataPageButton").hasClass("is-active") ){
+            
+        var acc = [accelerationX, accelerationY, accelerationZ];
+        var pitch = (180/3.141592) * ( Math.atan2( acc[0], Math.sqrt( acc[1] * acc[1] + acc[2] * acc[2])) );
+        var roll = (180/3.141592) * ( Math.atan2(-acc[1], -acc[2]) );
+
+
+        //parse data from sensors
+        var values = new Array(); 
+        values[0] =  pitch + 180; //((accelerationX + 10) / 18) * 360; //pitch
+        values[1] =  roll; //((accelerationY + 10) / 18) * 360; //roll
+        if(values[1] < 0) values[1] = 360 + roll;
+
+        /*************************** UPDATE CHART SENSOR DATA *****************************/
+        var now = Date.now();
+        if(app.neuroHaveFlag != true){ //oncle we have a nn model we only visualize that
+        //    lineRoll.append(now,     ( (values[0] / 360) / 7) + 0.05);
+        //    linePitch.append(now,    ( (values[1] / 360) / 7) + 0.10);
+            lineTherm1.append(now,    ((values[0] / 360) / 2) + 0.5);
+            lineTherm4.append(now,    ((values[1] / 360) / 2) + 0.0);
+        }
+            
+   //     console.log("timestamp + example: " + now + "  pitch: " + values[0] + " roll:" + values[1]);  //log because time gets big
+
+
+
+
+        /*************************** START ACTIVATE NEURAL NETWORK ***********************************/
+        //EXAMPLE NEURAL NETWORK FROM PHONE ACCELEROMETER DATA
+        if(app.neuroHaveFlag && app.connected == false){
+                app.neuroScore = app.neuralNet.activate([
+                    (values[0] / 360),
+                    (values[1] / 360)
+                ]);
+
+                //from 0-1 to 0-100%
+                app.neuroScore = app.neuroScore * 100;
+
+                //round to three sig digits
+                app.neuroScore = (Math.round(app.neuroScore * 1000)) / 1000;
+
+                if (app.neuroScore > 0.90){ app.alertDetect(); }
+
+             //   lineNN.append(now,     ( (app.neuroScore / 100) / 7) + 0.65);
+                lineNN.append(now,     (app.neuroScore / 100) );
+                app.showInfo('Detection: ' + app.neuroScore.toFixed(2) + "%");
+            }
+            /*************************** END ACTIVATE NEURAL NETWORK ***********************************/
+
+            /*************************** START EXAMPLE GET TRUE/ON TARGET SAMPLES ******************************/
+            if (app.getTrueFlag && app.connected == false && app.trainingDataTrue.length < 100) {
+
+                app.trainingDataTrue.push({
+                    input: [ (values[0] / 360), (values[1] / 360)],
+                    output: [1]
+                });
+
+                app.showInfo(" ...gathering true example training data");
+                $("#numTrueData").attr( "data-badge", app.trainingDataTrue.length );
+            }
+            /*************************** END EXAMPLE GET TRUE/ON TARGET SAMPLES **********************************/
+
+            /*************************** START EXAMPLE GET FALSE/OFF TARGET SAMPLES ******************************/
+            else if (app.getFalseFlag && app.connected == false && app.trainingDataFalse.length < 100) {
+
+                app.trainingDataFalse.push({
+                    input: [ (values[0] / 360), (values[1] / 360)],
+                    output: [0]
+                });
+
+                console.log("trainingDataFalse input: " + app.trainingDataFalse[app.trainingDataFalse.length - 1].input[0] + " " + app.trainingDataFalse[app.trainingDataFalse.length - 1].input[1] + " " + app.trainingDataFalse[app.trainingDataFalse.length - 1].input[2] + " " + app.trainingDataFalse[app.trainingDataFalse.length - 1].input[3] + " " + app.trainingDataFalse[app.trainingDataFalse.length - 1].input[4]);
+                app.showInfo(" ...gathering false training data");
+                $("#numFalseData").attr( "data-badge", app.trainingDataFalse.length );
+            } 
+            /*************************** END EXAMPLE GET FALSE/OFF TARGET SAMPLES ******************************/
+
+            /********************************* START TRAIN EXAMPLE NEURAL NET ***********************************/
+            if (app.trainFlag && app.connected == false) {
+
+                app.showInfo('Status: Training...');
+                console.log("**Training...");
+
+                $("#training-progress div.progressbar").css("width", "0%" );
+
+                //Recreate neural net and trainer
+                app.neuralNet = new app.Architect.LSTM(2, 2, 2, 1);
+
+                app.trainer = new app.Trainer(app.neuralNet);
+
+                var trainingData = app.trainingDataTrue.concat(app.trainingDataFalse); 
+                var iterationCount = 0;
+
+                console.log("NN1 Training data length: " + trainingData.length + "  input length: " + trainingData[2].input.length + "  output length: " + trainingData[2].output.length);
+                for(var f=0; f < trainingData.length; f++){
+                    console.log("trainingData " + f + ": input: " + trainingData[f].input[0] + " " + trainingData[f].input[1] + " output:" + trainingData[f].output[0]);
+                }
+
+                //synaptic hyperparameters and controls
+                var numIterations        = 1000;
+                var numRate              = 0.06;
+                var numError             = 0.06;
+                var numLogInterval       = 100;
+                var numScheduleInterval  = 100;
+
+             //   app.trainer.trainAsync(trainingData, {
+                app.trainer.train(trainingData, {
+                    rate: numRate,
+                    iterations: numIterations,
+                    error: numError,
+                    shuffle: true,
+                    log: numLogInterval,
+                    cost: app.Trainer.cost.CROSS_ENTROPY,
+                    schedule: {
+                        every: numScheduleInterval, // repeat this task every 500 iterations
+                        do: function(data) {
+                            // custom log
+                            iterationCount = iterationCount + numScheduleInterval;
+                            app.showInfo(iterationCount + '/' + numIterations + ' training iterations');
+                            console.log("schedule log - error:" + data.error + " iterations:" + data.iterations + " rate:" + data.rate);
+                        }
+                    }
+                });
+
+
+                app.showInfo('Status: Training Example Completed');
+                console.log("**End Example Training...");
+
+                app.neuroHaveFlag = true;
+                app.trainFlag = false;
+            }
+        } //is on data page?
+}
+
+/****************************************************
+*****END EXAMPLE BASED ON PHONE ACCELEROMETER *******
+****************************************************/
+
+
 /**
  * Do this if neural network score(s) is above threshold
  */
@@ -1062,9 +1263,6 @@ app.getSensorValues = function(data) {
     // Return result.
     return [roll, pitch, proximity, thermo1, thermo2, thermo3, thermo4, accelX, accelY, accelZ];
 };
-
-
-
 
 
 /***************************************************
@@ -1227,10 +1425,17 @@ app.onSendSettingsButton = function() {
 
 
 //limit number of selected targets and warn
-app.onClickTarget = function() {
+app.onClickTarget = function(code) {
     console.log("target input click");
+    $('.mdl-js-checkbox').each(function (index, element) { 
+        if( $(this).find('input').attr("code") == code ){
 
+        } else {
+            element.MaterialCheckbox.uncheck();
+        }
+    });
 
+/*
 
     var targetCount = 0;
 
@@ -1241,8 +1446,8 @@ app.onClickTarget = function() {
     });
 
 
- //   if(targetCount <= 1){ 
-        if(targetCount <= 0){ //one target max
+    if(targetCount <= 1){ //two target max
+        if(targetCount <= 0){ 
 
         $('.target-option-container').find('input').each(function() {
             enableButton( $(this).parent().attr('id') );
@@ -1250,20 +1455,22 @@ app.onClickTarget = function() {
         });
 
 
-  //  } else if(targetCount >= 2){  
-        } else if(targetCount >= 1){  //one target max
+    } else if(targetCount >= 2){  //two target max
+
 
         $('.target-option-container').find('input').each(function() {
 
 
             if ( $(this).is(":checked") ){
-           //     enableButton( $(this).attr('id') );
+                enableButton( $(this).attr('id') );
             } else {
                 disableButton( $(this).parent().attr('id') );
                 disableButton( $(this).attr('id') );
             }
 
         });
+
+
 
     } 
 
@@ -1278,8 +1485,34 @@ app.onClickTarget = function() {
     //    }
 
         $("#target-count-warning").show();
-    } else { $("#target-count-warning").hide(); }
+    } else { $("#target-count-warning").hide(); } */
+/*        $('.target-option-container').find('input').each(function() {
+
+            disableButton( $(this).attr('id') );
+            enableButton( $(this).attr('id') );
+        });
+
+    $("input.target-position").prop('checked', false);
+    $("input.target-position").attr('checked', false);
+    $("input.target-position").removeClass('selected');
+    $("input.target-position").removeClass('current-checked');
+
+    $("input.target-position[code=" + code + "]").addClass('current-checked'); */
+
+ /*   $('.target-option-container').find('input').each(function() {
+        enableButton( $(this).attr('id') );
+        $(this).prop('checked', false);
+        $(this).removeClass('selected');
+        $(this).removeClass('current-checked');
+    });
+
+    var $activeTarget = $("input").find("[code='" + code + "']"); 
+    $activeTarget.prop('checked', true);
+    $activeTarget.addClass('selected');
+    $activeTarget.addClass('current-checked'); */
+
 }; 
+
 
 /**
  * Gather neural net training data for true condition - when on target
@@ -1485,5 +1718,59 @@ function str2ab(str){
         return bufView;  
     }
 }
+
+/*
+function deviceOrientationHandler(evt) {
+    var orientationData = evt;
+
+    // vertical tilt
+  //  orientationEl.children[3].innerHTML = evt.beta;
+    // horizontal tilt
+  //  orientationEl.children[5].innerHTML = evt.gamma;
+
+    setInterval(function() {
+    //    console.log('orientation.x: ' + evt.beta + 'orientation.y: ' + evt.gamma);
+
+        if(app.connected == false && $("#dataPageButton").hasClass("is-active")){
+            console.log('orientation.x: ' + evt.beta + 'orientation.y: ' + evt.gamma);
+            accelerometerHandler(evt.beta, evt.gamma);
+        }
+
+    }, 250);
+}
+*/
+
+function initialiseAccelerometer()
+{
+    function onSuccess(acceleration)
+    {
+        //  console.log('acceleration.x: ' + acceleration.x + 'acceleration.y: ' + acceleration.y);
+        if(app.connected == false && $("#dataPageButton").hasClass("is-active")){
+            accelerometerHandler(acceleration.x, acceleration.y, acceleration.z);
+
+            if( $("#graph-title").hasClass("example-data-title") ){
+
+            } else {
+                $("#graph-title").html("EXAMPLE DATA FROM PHONE");
+                $("#graph-title").addClass("example-data-title")
+            }
+        }
+        if(app.connected == true){
+            // watchID created while adding the watchAcceleration listener
+            navigator.accelerometer.clearWatch(watchID);
+        }
+    }
+
+    function onError(error)
+    {
+        console.log('Accelerometer error: ' + error)
+    }
+
+    var watchID = navigator.accelerometer.watchAcceleration(
+        onSuccess,
+        onError,
+        { frequency: 200 })
+}
+
 
 app.initialize();

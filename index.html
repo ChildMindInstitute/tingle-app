@@ -529,19 +529,19 @@
                             <ul class="mdl-list">
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-1" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-1">
-                                        <input type="checkbox" id="checkbox-1" class="checkbox-1 target-position mdl-checkbox__input current-checked" onclick="app.onClickTarget()"  name="front-head" code="1" checked>
+                                        <input type="checkbox" id="checkbox-1" class="checkbox-1 target-position mdl-checkbox__input current-checked" onclick="app.onClickTarget(1)"  name="front-head" code="1" checked>
                                         <span class="mdl-checkbox__label">Front Head</span>
                                     </label>
                                 </li>
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-2" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-2">
-                                        <input type="checkbox" id="checkbox-2" class="checkbox-2 target-position mdl-checkbox__input" onclick="app.onClickTarget()" name="side-head" code="2">
+                                        <input type="checkbox" id="checkbox-2" class="checkbox-2 target-position mdl-checkbox__input" onclick="app.onClickTarget(2)" name="side-head" code="2">
                                         <span class="mdl-checkbox__label">Side Head</span>
                                     </label>
                                 </li>
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-3" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-3">
-                                        <input type="checkbox" id="checkbox-3" class="checkbox-3 target-position mdl-checkbox__input" onclick="app.onClickTarget()" name="back-head" code="3">
+                                        <input type="checkbox" id="checkbox-3" class="checkbox-3 target-position mdl-checkbox__input" onclick="app.onClickTarget(3)" name="back-head" code="3">
                                         <span class="mdl-checkbox__label">Back Head</span>
                                     </label>
                                 </li>
@@ -551,19 +551,19 @@
                             <ul class="mdl-list">
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-4" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-4">
-                                        <input type="checkbox" id="checkbox-4" class="checkbox-4 target-position mdl-checkbox__input" onclick="app.onClickTarget()" name="top-head" code="4">
+                                        <input type="checkbox" id="checkbox-4" class="checkbox-4 target-position mdl-checkbox__input" onclick="app.onClickTarget(4)" name="top-head" code="4">
                                         <span class="mdl-checkbox__label">Top Head</span>
                                     </label>
                                 </li>
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-5" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-5">
-                                        <input type="checkbox" id="checkbox-5" class="checkbox-5 target-position mdl-checkbox__input" onclick="app.onClickTarget()" name="mouth" code="5">
+                                        <input type="checkbox" id="checkbox-5" class="checkbox-5 target-position mdl-checkbox__input" onclick="app.onClickTarget(5)" name="mouth" code="5">
                                         <span class="mdl-checkbox__label">Mouth</span>
                                     </label>
                                 </li>
                                 <li class="mdl-list__item">
                                     <label id="label-checkbox-6" class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect mdl-checkbox--colored-yellow" for="checkbox-6">
-                                        <input type="checkbox" id="checkbox-6" class="checkbox-6 target-position mdl-checkbox__input" onclick="app.onClickTarget()" name="eyes" code="6">
+                                        <input type="checkbox" id="checkbox-6" class="checkbox-6 target-position mdl-checkbox__input" onclick="app.onClickTarget(6)" name="eyes" code="6">
                                         <span class="mdl-checkbox__label">Eyes</span>
                                     </label>
                                 </li>
@@ -662,7 +662,7 @@
             <div class="mdl-cell mdl-cell--12-col-desktop mdl-cell--12-col-tablet mdl-cell--12-col-phone">
                 <div class="mdl-card mdl-shadow--2dp ui-buttons ui-toggles neural-network-settings">
                     <div class="mdl-card__title">
-                        <span class="text-color--gray">Detection Performance and Data</span>
+                        <span id="graph-title" class="text-color--gray">Detection Performance and Data</span>
                     </div>
                     <div class="mdl-card__supporting-text">
 						<div id="streaming-data-chart-wrapper"><canvas id="streaming-data-chart" width="330" height="175"></canvas></div>
